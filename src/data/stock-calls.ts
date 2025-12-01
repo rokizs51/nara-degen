@@ -46,6 +46,7 @@ export interface SimulationData {
   returnPercentage: number;
   unrealizedGain: number;
   returnOnInvestment: number;
+  shares?: number;
 }
 
 export interface PortfolioSimulation {
