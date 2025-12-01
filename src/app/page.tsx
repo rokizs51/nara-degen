@@ -1,65 +1,130 @@
-import Image from "next/image";
+import { DashboardSkeleton } from '@/components/DashboardSkeleton';
+import ClientDashboard from '@/components/ClientDashboard';
+import { dummyStockCalls } from '@/data/stock-calls';
+import { StockWithMarketData, MarketIndices } from '@/data/stock-calls';
+import YahooFinance from 'yahoo-finance2';
 
-export default function Home() {
+// For now, we'll skip server-side data fetching to avoid Node.js module issues
+// The client component will handle data fetching
+
+
+// Initial data for SSR - client will fetch real data
+function getInitialData(): {
+  stocks: StockWithMarketData[];
+  marketIndices: MarketIndices | undefined;
+  error: string | null;
+  fetchTime: string;
+} {
+  const fallbackStocks = dummyStockCalls.map(stock => ({
+    ...stock,
+    historicalData: [],
+    maxGain: 0,
+    currentGain: ((stock.currentPrice - stock.entryPrice) / stock.entryPrice) * 100,
+    daysToMax: null,
+    jkseReturn: undefined,
+    lq45Return: undefined
+  }));
+
+  return {
+    stocks: fallbackStocks,
+    marketIndices: undefined,
+    error: 'Loading real-time data...',
+    fetchTime: new Date().toISOString()
+  };
+}
+
+// Generate static params for ISR (Incremental Static Regeneration)
+export async function generateStaticParams() {
+  return [];
+}
+
+
+
+// Set revalidation period (5 minutes for market data)
+export const revalidate = 300; // 5 minutes
+
+// Page metadata
+export const metadata = {
+  title: 'Nara Degen | Real-time Market Analysis',
+  description: 'Track Indonesian stock portfolio performance against Jakarta market indices (JKSE/IHSG, LQ45). Real-time data, performance metrics, and professional analytics.',
+  keywords: 'Indonesian stocks, JKSE, IHSG, LQ45, portfolio tracker, market analysis, financial dashboard',
+  authors: [{ name: 'Portfolio Tracker' }],
+  openGraph: {
+    title: 'Nara Degen',
+    description: 'Professional portfolio tracking for Indonesian stock market',
+    type: 'website',
+    locale: 'id_ID',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Indonesian Stock Portfolio Tracker',
+    description: 'Track portfolio performance against Jakarta market indices',
+  },
+};
+
+// Server Component
+export default async function HomePage() {
+  // Get initial data (client will fetch real data)
+  const { stocks, marketIndices, error, fetchTime } = getInitialData();
+
+  // Check if we have meaningful data
+  const hasData = stocks.length > 0;
+  const hasMarketData = marketIndices && marketIndices.jkse?.length > 0 && marketIndices.lq45?.length > 0;
+
+
+  // Log build status for debugging
+  console.log('Build status:', {
+    hasData,
+    hasMarketData,
+    stockCount: stocks.length,
+    error: error ? 'YES' : 'NO',
+    fetchTime
+  });
+
+  // Show loading skeleton during initial build or data fetch
+  if (!hasData) {
+    return <DashboardSkeleton />;
+  }
+
+  // Pass data to client component
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <>
+      {/* Add structured data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "Indonesian Stock Portfolio Tracker",
+            "description": "Professional portfolio tracking for Indonesian stock market with real-time performance analysis",
+            "url": process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000",
+            "applicationCategory": "Finance",
+            "operatingSystem": "Web Browser",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "IDR"
+            },
+            "author": {
+              "@type": "Organization",
+              "name": "Portfolio Tracker Team"
+            },
+            "dateModified": fetchTime,
+            "mainEntity": {
+              "@type": "FinancialService",
+              "name": "Stock Market Analysis",
+              "serviceType": "Portfolio Tracking"
+            }
+          })
+        }}
+      />
+
+      <ClientDashboard
+        initialStocks={stocks}
+        initialMarketIndices={marketIndices}
+        error={error}
+      />
+    </>
   );
 }
