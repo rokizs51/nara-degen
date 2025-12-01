@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker
-  output: 'standalone',
+  // Enable static export for Cloudflare Pages (build-time output)
+  output: 'export',
 
-  // Optimize images for production
+  // Optimize images for static export
   images: {
     unoptimized: true,
   },
@@ -13,26 +13,8 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
 
-  // Security headers
-  headers: async () => [
-    {
-      source: '/(.*)',
-      headers: [
-        {
-          key: 'X-Frame-Options',
-          value: 'DENY',
-        },
-        {
-          key: 'X-Content-Type-Options',
-          value: 'nosniff',
-        },
-        {
-          key: 'Referrer-Policy',
-          value: 'no-referrer-when-downgrade',
-        },
-      ],
-    },
-  ],
+  // Trailing slash for Cloudflare Pages compatibility
+  trailingSlash: true,
 
   // Environment variables
   env: {
