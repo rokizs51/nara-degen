@@ -254,15 +254,15 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         </p>
       </div>
 
-      <div className="w-full" style={{ height: '500px', minHeight: '500px' }}>
+      <div className="w-full h-[300px] sm:h-[400px] md:h-[450px] lg:h-[500px]">
         <ResponsiveContainer width="100%" height="100%" debounce={1}>
           <LineChart
             data={chartData}
             margin={{
-              top: 20,
-              right: 80,
-              left: 120,
-              bottom: 80,
+              top: 10,
+              right: 20,
+              left: 40,
+              bottom: 40,
             }}
           >
             <CartesianGrid
@@ -274,7 +274,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
               dataKey="date"
               tick={{
                 fill: gridColors.textFill,
-                fontSize: 11,
+                fontSize: 10,
                 textAnchor: 'end',
               }}
               tickLine={{
@@ -282,14 +282,14 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
               }}
               tickMargin={10}
               interval="preserveStartEnd"
-              minTickGap={30}
+              minTickGap={20}
               angle={-45}
-              height={60}
+              height={50}
             />
             <YAxis
               tick={{
                 fill: gridColors.textFill,
-                fontSize: 12,
+                fontSize: 10,
               }}
               tickLine={{
                 stroke: gridColors.stroke,
@@ -300,9 +300,9 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
                 angle: -90,
                 position: 'insideLeft',
                 fill: gridColors.textFill,
-                fontSize: 13,
+                fontSize: 11,
                 style: { textAnchor: 'middle' },
-                offset: -50,
+                offset: -40,
               }}
             />
             <Tooltip content={<CustomTooltip darkMode={darkMode} />} />

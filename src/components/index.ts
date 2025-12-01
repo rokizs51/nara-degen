@@ -2,6 +2,7 @@
 export { default as StockTable } from './StockTable';
 export { default as StatsMatrix } from './StatsMatrix';
 export { default as PerformanceChart } from './PerformanceChart';
+export { default as PortfolioSimulation } from './PortfolioSimulation';
 export { default as ClientDashboard } from './ClientDashboard';
 export { DashboardSkeleton } from './DashboardSkeleton';
 

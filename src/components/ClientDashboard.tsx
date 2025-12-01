@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { StockTable, StatsMatrix, PerformanceChart } from '@/components';
+import { StockTable, StatsMatrix, PerformanceChart, PortfolioSimulation } from '@/components';
 import { StockWithMarketData, MarketIndices } from '@/data/stock-calls';
 
 interface ClientDashboardProps {
@@ -74,21 +74,21 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
     <div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Header */}
       <div className="border-b border-gray-100 dark:border-gray-900">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-light text-gray-900 dark:text-white tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 dark:text-white tracking-tight">
                 Nara Degen
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
                 Jakarta market performance tracking
               </p>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <div className="text-xs text-gray-400 dark:text-gray-500">
                 Last updated
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium">
                 {formatLastUpdated()}
               </div>
             </div>
@@ -97,13 +97,13 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Key Metrics Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8 mb-8">
+          <div className="xl:col-span-2">
             <PerformanceChart stocks={stocks} marketIndices={marketIndices} isLoading={isLoading} />
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             <div>
               <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">
                 Portfolio Overview
@@ -175,8 +175,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
               <img
                 src="/shm.jpg"
                 alt="Portfolio Management Mood"
-                className="w-full h-auto rounded-lg opacity-90 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ maxHeight: '280px' }}
+                className="w-full h-auto max-h-[200px] sm:max-h-[240px] lg:max-h-[280px] rounded-lg opacity-90 group-hover:opacity-100 transition-opacity duration-300 object-cover"
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
@@ -186,6 +185,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
         {/* Stats Matrix */}
         <div className="mb-12">
           <StatsMatrix stocks={stocks} isLoading={isLoading} />
+        </div>
+
+        {/* Portfolio Simulation */}
+        <div className="mb-12">
+          <PortfolioSimulation stocks={stocks} marketIndices={marketIndices} isLoading={isLoading} />
         </div>
 
         {/* Stock Table */}

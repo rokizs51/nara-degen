@@ -33,6 +33,31 @@ export interface StockWithMarketData extends StockCall {
   daysToMax: number | null;
   jkseReturn?: number;
   lq45Return?: number;
+  // Simulation properties
+  simulatedInvestment?: number;
+  simulatedValue?: number;
+  simulatedReturn?: number;
+}
+
+export interface SimulationData {
+  id: string;
+  investmentAmount: number;
+  currentValue: number;
+  returnPercentage: number;
+  unrealizedGain: number;
+  returnOnInvestment: number;
+}
+
+export interface PortfolioSimulation {
+  stocks: SimulationData[];
+  jkseSimulation: SimulationData;
+  lq45Simulation: SimulationData;
+  totalInvestment: number;
+  totalValue: number;
+  totalReturn: number;
+  totalReturnPercentage: number;
+  alphaVsJkse: number;
+  alphaVsLq45: number;
 }
 
 export interface MarketIndices {
