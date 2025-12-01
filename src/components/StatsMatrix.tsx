@@ -121,7 +121,7 @@ const StatsMatrix: React.FC<StatsMatrixProps> = ({ stocks, isLoading = false }) 
       : 0;
 
     // Calculate total monetary gain/loss (assuming equal investment of IDR 1M per stock)
-    const investmentPerStock = 1000000; // 1M IDR
+    const investmentPerStock = 10000000; // 1M IDR
     const totalGainAmount = stocks.reduce((sum, stock) => {
       const stockGain = (stock.currentGain / 100) * investmentPerStock;
       return sum + stockGain;

@@ -44,7 +44,8 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   const refreshData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/market-data');
+      const endpoint = process.env.NEXT_PUBLIC_MARKET_API_URL || '/api/market-data';
+      const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch');
 
       const data = await response.json();
