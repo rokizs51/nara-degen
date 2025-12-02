@@ -6,13 +6,19 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
   // Enhanced CORS configuration
+  const frontendUrl = process.env.FRONTEND_URL;
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    frontendUrl,
+    'https://your-vercel-domain.vercel.app',
+    'https://your-custom-domain.com'
+  ];
+
+  console.log('CORS allowed origins:', allowedOrigins);
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://your-vercel-domain.vercel.app',
-      'https://your-custom-domain.com',
-      '*' // Fallback for development
-    ],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
