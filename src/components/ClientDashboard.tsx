@@ -44,8 +44,8 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   const refreshData = async () => {
     setIsLoading(true);
     try {
-      const endpoint = process.env.NEXT_PUBLIC_MARKET_API_URL || '/api/market-data';
-      const response = await fetch(endpoint);
+      const endpoint = process.env.NEXT_PUBLIC_MARKET_API_URL;
+      const response = await fetch(endpoint + '/market-data');
       if (!response.ok) throw new Error('Failed to fetch');
 
       const data = await response.json();
@@ -137,10 +137,9 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Total Return</span>
-                    <span className={`text-xl font-light ${
-                      stocks.length > 0 && (stocks.reduce((sum, s) => sum + s.currentGain, 0) / stocks.length) >= 0
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
+                    <span className={`text-xl font-light ${stocks.length > 0 && (stocks.reduce((sum, s) => sum + s.currentGain, 0) / stocks.length) >= 0
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
                       }`}>
                       {stocks.length > 0
                         ? ((stocks.reduce((sum, s) => sum + s.currentGain, 0) / stocks.length).toFixed(1))
@@ -150,11 +149,10 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
                   </div>
                   <div className="h-px bg-gray-200 dark:bg-gray-800 rounded-full">
                     <div
-                      className={`h-px rounded-full transition-all duration-700 ${
-                        stocks.length > 0 && (stocks.reduce((sum, s) => sum + s.currentGain, 0) / stocks.length) >= 0
-                          ? 'bg-green-500'
-                          : 'bg-red-500'
-                      }`}
+                      className={`h-px rounded-full transition-all duration-700 ${stocks.length > 0 && (stocks.reduce((sum, s) => sum + s.currentGain, 0) / stocks.length) >= 0
+                        ? 'bg-green-500'
+                        : 'bg-red-500'
+                        }`}
                       style={{
                         width: `${Math.min(Math.max((stocks.reduce((sum, s) => sum + s.currentGain, 0) / stocks.length + 20) * 2, 0), 100)}%`
                       }}
