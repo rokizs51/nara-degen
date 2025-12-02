@@ -4,7 +4,21 @@ import { AppModule } from './app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
-  app.enableCors({ origin: '*', methods: 'GET,OPTIONS', allowedHeaders: 'Content-Type' })
+
+  // Enhanced CORS configuration
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'https://your-vercel-domain.vercel.app',
+      'https://your-custom-domain.com',
+      '*' // Fallback for development
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400 // 24 hours
+  })
+
   const port = process.env.PORT ? parseInt(process.env.PORT) : 4000
   await app.listen(port)
   // eslint-disable-next-line no-console
