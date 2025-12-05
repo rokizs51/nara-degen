@@ -43,6 +43,8 @@ jobs:
           # Use caching to speed up future builds
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_MARKET_API_URL=https://api.rokizs.space
 
       # --- BUILD MARKET DATA SERVICE ---
       - name: Build and push Market Data Service image
@@ -53,3 +55,5 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-market-data-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            FRONTEND_URL=https://naradegen.rokizs.space
