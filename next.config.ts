@@ -1,16 +1,20 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: "standalone",
 
-const nextConfig: NextConfig = {
+  // Disable Gzip (let Cloudflare handle it to save VM CPU)
+  compress: false,
+
+  // Good for security
+  poweredByHeader: false,
+
+  // Essential for self-hosting to prevent CPU spikes
   images: {
     unoptimized: true,
   },
-  compress: true,
-  poweredByHeader: false,
-  env: {
-    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_MARKET_API_URL: process.env.NEXT_PUBLIC_MARKET_API_URL,
-  },
+
+  // NOTE: No 'env' block needed. 
+  // Next.js automatically detects NEXT_PUBLIC_ variables during 'npm run build'
 };
 
 export default nextConfig;
