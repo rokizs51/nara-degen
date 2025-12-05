@@ -8,6 +8,6 @@ COPY package.json package-lock.json* ./
 RUN npm install
 COPY . .
 RUN npm run build && npm prune --production
-ENV PORT=4000
-EXPOSE 4000
+ENV PORT=4001
+EXPOSE 4001
 CMD ["node","dist/main.js"]

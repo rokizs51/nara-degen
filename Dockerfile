@@ -10,8 +10,8 @@ RUN npm ci
 RUN npm install @next/swc-linux-x64-gnu@16.0.6 --no-save
 COPY . .
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3001
 RUN npm run build
 RUN npm prune --production
-EXPOSE 3000
+EXPOSE 3001
 CMD ["npm","run","start"]
