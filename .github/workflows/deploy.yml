@@ -1,104 +1,55 @@
-name: Deploy Next.js to Cloudflare Pages
+name: Build and Push Docker Images
 
-# Define the events that trigger the workflow
 on:
-  # 1. Trigger on 'push' to the default branch
   push:
-    branches:
-      - master  # Updated to match your project's default branch
+    branches: [ "main" ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
-  # 2. Trigger on 'pull_request' events
-  pull_request:
-    branches:
-      - master  # Trigger for PRs targeting the default branch
-
-# Environment variables that are used across jobs
 env:
-  CLOUDFLARE_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
-    name: Build Next.js for Cloudflare Pages
+  build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # IMPORTANT: Required to push to GHCR
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Show Versions
-        run: |
-          node --version
-          npm --version
+      # Sets up Docker Buildx (required for advanced building/caching)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Build Static Export
-        run: npm run build
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+      # --- BUILD FRONTEND (Next.js App) ---
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
         with:
-          name: website-dist
-          path: out/
-          retention-days: 1
+          context: . # Point to root directory for main Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+          # Use caching to speed up future builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  deploy_production:
-    name: Deploy to Production
-    needs: [build]
-
-    # Only deploy to production when pushing to master branch
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
+      # --- BUILD MARKET DATA SERVICE ---
+      - name: Build and push Market Data Service image
+        uses: docker/build-push-action@v5
         with:
-          name: website-dist
-          path: out/
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
-          directory: out
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          wranglerVersion: '3'
-
-  # deploy_preview:
-  #   name: Deploy Preview
-  #   needs: [build]
-
-  #   # Deploy preview for pull requests
-  #   if: github.event_name == 'pull_request'
-
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #     - name: Download Build Artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: website-dist
-  #         path: out/
-
-  #     - name: Deploy Preview to Cloudflare Pages
-  #       uses: cloudflare/pages-action@v1
-  #       with:
-  #         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  #         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  #         projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
-  #         directory: out
-  #         gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-  #         wranglerVersion: '3'
-  #         # Deploy to preview environment
-  #         deployment: preview
+          context: ./services/market-data-service # Point to market-data-service directory
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-market-data-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
