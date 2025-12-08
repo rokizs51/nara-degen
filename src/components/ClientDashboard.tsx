@@ -73,7 +73,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   const refreshData = async () => {
     setIsLoading(true);
     try {
-      const endpoint = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const endpoint = process.env.NEXT_PUBLIC_MARKET_API_URL || 'http://localhost:4001';
       const response = await fetch(endpoint + '/market-data');
       if (!response.ok) throw new Error('Failed to fetch');
 
