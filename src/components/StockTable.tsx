@@ -1,10 +1,11 @@
 import React from 'react';
-import { StockWithMarketData } from '@/data/stock-calls';
+import { StockWithMarketData, MarketDataPoint } from '@/data/stock-calls';
 import { formatCurrency, formatPercentage, calculateRelativePerformance } from '@/lib/formatters';
 
 interface StockTableProps {
   stocks: StockWithMarketData[];
   isLoading?: boolean;
+  darkMode?: boolean;
 }
 
 interface BadgeProps {
@@ -13,8 +14,37 @@ interface BadgeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+// Helper function to get price from call date month
+const getPriceFromCallDateMonth = (stock: StockWithMarketData): number => {
+  const callDate = new Date(stock.callDate);
+
+  // Get the first day of the call date month
+  const firstDayOfMonth = new Date(callDate.getFullYear(), callDate.getMonth(), 1);
+
+  // Find the historical data point closest to the call date month
+  const callDateData = stock.historicalData.find(d => {
+    const dataDate = new Date(d.date);
+    return dataDate.getFullYear() === callDate.getFullYear() &&
+           dataDate.getMonth() === callDate.getMonth();
+  });
+
+  // If we found data for the call date month, use the closing price from the first trading day of that month
+  if (callDateData) {
+    return callDateData.close;
+  }
+
+  // Fallback to the first available data point after or on the call date
+  const afterCallDate = stock.historicalData.find(d => new Date(d.date) >= callDate);
+  if (afterCallDate) {
+    return afterCallDate.close;
+  }
+
+  // Final fallback to original entry price
+  return stock.entryPrice;
+};
+
 // Reusable badge component for color-coded values
-const ValueBadge: React.FC<BadgeProps> = ({ value, showIcon = false, size = 'md' }) => {
+const ValueBadge: React.FC<BadgeProps & { darkMode?: boolean }> = ({ value, showIcon = false, size = 'md', darkMode = false }) => {
   const isPositive = value >= 0;
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
@@ -30,10 +60,15 @@ const ValueBadge: React.FC<BadgeProps> = ({ value, showIcon = false, size = 'md'
 
   return (
     <span
-      className={`inline-flex items-center gap-1 font-medium rounded-full ${sizeClasses[size]} ${isPositive
-          ? 'bg-green-100 text-green-800 border border-green-200'
-          : 'bg-red-100 text-red-800 border border-red-200'
-        }`}
+      className={`inline-flex items-center gap-1 font-medium rounded-full ${sizeClasses[size]} ${
+        isPositive
+          ? darkMode
+            ? 'bg-green-900 text-green-200 border border-green-800'
+            : 'bg-green-100 text-green-800 border border-green-200'
+          : darkMode
+            ? 'bg-red-900 text-red-200 border border-red-800'
+            : 'bg-red-100 text-red-800 border border-red-200'
+      }`}
     >
       {showIcon && (
         <svg
@@ -64,22 +99,22 @@ const ValueBadge: React.FC<BadgeProps> = ({ value, showIcon = false, size = 'md'
   );
 };
 
-const StockTable: React.FC<StockTableProps> = ({ stocks, isLoading = false }) => {
+const StockTable: React.FC<StockTableProps> = ({ stocks, isLoading = false, darkMode = false }) => {
   if (isLoading) {
     return (
       <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left p-3 font-semibold text-gray-700 bg-gray-50">Ticker</th>
-              <th className="text-left p-3 font-semibold text-gray-700 bg-gray-50">Company</th>
-              <th className="text-left p-3 font-semibold text-gray-700 bg-gray-50">Entry → Target</th>
-              <th className="text-left p-3 font-semibold text-gray-700 bg-gray-50">Current</th>
-              <th className="text-center p-3 font-semibold text-gray-700 bg-gray-50">Current Gain</th>
-              <th className="text-center p-3 font-semibold text-gray-700 bg-gray-50">Max Gain</th>
-              <th className="text-center p-3 font-semibold text-gray-700 bg-gray-50">vs JKSE</th>
-              <th className="text-center p-3 font-semibold text-gray-700 bg-gray-50">vs LQ45</th>
-              <th className="text-center p-3 font-semibold text-gray-700 bg-gray-50">Days to Max</th>
+            <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <th className={`text-left p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>Ticker</th>
+              <th className={`text-left p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>Company</th>
+              <th className={`text-left p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>Entry → Target</th>
+              <th className={`text-left p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>Current</th>
+              <th className={`text-center p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>Current Gain</th>
+              <th className={`text-center p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>Max Gain</th>
+              <th className={`text-center p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>vs JKSE</th>
+              <th className={`text-center p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>vs LQ45</th>
+              <th className={`text-center p-3 font-semibold ${darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'}`}>Days to Max</th>
             </tr>
           </thead>
           <tbody>
@@ -143,128 +178,185 @@ const StockTable: React.FC<StockTableProps> = ({ stocks, isLoading = false }) =>
   }
 
   return (
-    <div className="w-full overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+    <div className={`w-full overflow-x-auto border rounded-lg shadow-sm ${
+      darkMode ? 'border-gray-700' : 'border-gray-200'
+    }`}>
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50">
-            <th className="text-left p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+          <tr className={`border-b bg-gray-50 ${
+            darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200'
+          }`}>
+            <th className={`text-left p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               Ticker
             </th>
-            <th className="text-left p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-left p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               Company
             </th>
-            <th className="text-left p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-left p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               Entry → Target
             </th>
-            <th className="text-left p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-left p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               Current
             </th>
-            <th className="text-center p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-center p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               Current Gain
             </th>
-            <th className="text-center p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-center p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               Max Gain
             </th>
-            <th className="text-center p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-center p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               vs JKSE
             </th>
-            <th className="text-center p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-center p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               vs LQ45
             </th>
-            <th className="text-center p-4 font-semibold text-gray-700 sticky top-0 bg-gray-50 z-10">
+            <th className={`text-center p-4 font-semibold sticky top-0 z-10 ${
+              darkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-700 bg-gray-50'
+            }`}>
               Days to Max
             </th>
           </tr>
         </thead>
         <tbody>
           {stocks.map((stock) => {
-            const jkseComparison = calculateRelativePerformance(stock.currentGain, stock.jkseReturn);
-            const lq45Comparison = calculateRelativePerformance(stock.currentGain, stock.lq45Return);
+            // Get price from call date month
+            const callDateMonthPrice = getPriceFromCallDateMonth(stock);
+
+            // Recalculate current gain based on call date month price
+            const recalculatedCurrentGain = ((stock.currentPrice - callDateMonthPrice) / callDateMonthPrice) * 100;
+
+            const jkseComparison = calculateRelativePerformance(recalculatedCurrentGain, stock.jkseReturn);
+            const lq45Comparison = calculateRelativePerformance(recalculatedCurrentGain, stock.lq45Return);
 
             return (
               <tr
                 key={stock.id}
-                className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                className={`border-b transition-colors ${
+                  darkMode
+                    ? 'border-gray-700 hover:bg-gray-800'
+                    : 'border-gray-100 hover:bg-gray-50'
+                }`}
               >
                 <td className="p-4">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-semibold text-gray-900">
+                    <span className={`font-mono font-semibold ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
                       {stock.ticker}
                     </span>
-                    <ValueBadge value={stock.currentGain} size="sm" />
+                    <ValueBadge value={recalculatedCurrentGain} size="sm" darkMode={darkMode} />
                   </div>
                 </td>
                 <td className="p-4">
                   <div>
-                    <div className="font-medium text-gray-900">{stock.companyName}</div>
-                    <div className="text-sm text-gray-500">{stock.sector}</div>
+                    <div className={`font-medium ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{stock.companyName}</div>
+                    <div className={`text-sm ${
+                      darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>{stock.sector}</div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-400">{stock.analyst}</span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-400">{stock.callDate}</span>
+                      <span className={`text-xs ${
+                        darkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`}>{stock.analyst}</span>
+                      <span className={`text-xs ${
+                        darkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`}>•</span>
+                      <span className={`text-xs ${
+                        darkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`}>{stock.callDate}</span>
                     </div>
                   </div>
                 </td>
                 <td className="p-4">
                   <div className="text-sm">
-                    <div className="font-medium text-gray-900">
-                      {formatCurrency(stock.entryPrice)}
+                    <div className={`font-medium ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {formatCurrency(callDateMonthPrice)}
                     </div>
-                    <div className="text-xs text-gray-500">→ {formatCurrency(stock.targetPrice)}</div>
-                    <div className="text-xs text-gray-400">
-                      {formatPercentage(((stock.targetPrice - stock.entryPrice) / stock.entryPrice) * 100)} target
+                    <div className={`text-xs ${
+                      darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>→ {formatCurrency(stock.targetPrice)}</div>
+                    <div className={`text-xs ${
+                      darkMode ? 'text-gray-500' : 'text-gray-400'
+                    }`}>
+                      {formatPercentage(((stock.targetPrice - callDateMonthPrice) / callDateMonthPrice) * 100)} target
+                    </div>
+                    <div className={`text-xs font-medium mt-1 ${
+                      darkMode ? 'text-blue-400' : 'text-blue-500'
+                    }`}>
+                      {new Date(stock.callDate).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
                     </div>
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className="font-medium text-gray-900">
+                  <div className={`font-medium ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {formatCurrency(stock.currentPrice)}
                   </div>
                 </td>
                 <td className="p-4 text-center">
-                  <ValueBadge value={stock.currentGain} showIcon={true} />
+                  <ValueBadge value={recalculatedCurrentGain} showIcon={true} darkMode={darkMode} />
                 </td>
                 <td className="p-4 text-center">
                   <div className="flex flex-col items-center gap-1">
-                    <ValueBadge value={stock.maxGain} />
-                    <span className="text-xs text-gray-500">
-                      {formatPercentage((stock.maxGain / stock.currentGain) * 100)} of current
+                    <ValueBadge value={stock.maxGain} darkMode={darkMode} />
+                    <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {formatPercentage((stock.maxGain / recalculatedCurrentGain) * 100)} of current
                     </span>
                   </div>
                 </td>
                 <td className="p-4 text-center">
                   {stock.jkseReturn !== undefined ? (
                     <div className="flex flex-col items-center gap-1">
-                      <ValueBadge value={jkseComparison.outperformance} />
-                      <span className="text-xs text-gray-500">
+                      <ValueBadge value={jkseComparison.outperformance} darkMode={darkMode} />
+                      <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         JKSE: {formatPercentage(stock.jkseReturn)}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 text-sm">-</span>
+                    <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>-</span>
                   )}
                 </td>
                 <td className="p-4 text-center">
                   {stock.lq45Return !== undefined ? (
                     <div className="flex flex-col items-center gap-1">
-                      <ValueBadge value={lq45Comparison.outperformance} />
-                      <span className="text-xs text-gray-500">
+                      <ValueBadge value={lq45Comparison.outperformance} darkMode={darkMode} />
+                      <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         LQ45: {formatPercentage(stock.lq45Return)}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 text-sm">-</span>
+                    <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>-</span>
                   )}
                 </td>
                 <td className="p-4 text-center">
                   <div className="flex items-center justify-center">
                     {stock.daysToMax !== null ? (
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{stock.daysToMax}</span>
-                        <span className="text-xs text-gray-500">days</span>
+                        <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stock.daysToMax}</span>
+                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>days</span>
                       </div>
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>-</span>
                     )}
                   </div>
                 </td>

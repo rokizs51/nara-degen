@@ -10,6 +10,8 @@ async function bootstrap() {
   const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
     frontendUrl,
     'https://your-vercel-domain.vercel.app',
     'https://your-custom-domain.com'
@@ -25,7 +27,7 @@ async function bootstrap() {
     maxAge: 86400 // 24 hours
   })
 
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 4000
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 4001
   await app.listen(port)
   // eslint-disable-next-line no-console
   console.log(`market-data-service listening on ${port}`)

@@ -65,7 +65,7 @@ export const dummyStockCalls: StockCall[] = [
     targetPrice: 3400,
     entryPrice: 800,
     currentPrice: 2200,
-    callDate: '2025-05-01',
+    callDate: '2025-06-01',
     analyst: 'John Doe',
     sector: 'Conglomerate',
     recommendation: 'BUY',

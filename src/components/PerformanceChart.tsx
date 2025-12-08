@@ -1,16 +1,9 @@
 import React, { useMemo } from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 import { StockWithMarketData, MarketDataPoint, MarketIndices } from '@/data/stock-calls';
 import { format } from 'date-fns';
+
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface ChartDataPoint {
   date: string;
@@ -120,45 +113,20 @@ const useNormalizedChartData = (
   }, [stocks, marketIndices]);
 };
 
-// Custom tooltip component
-const CustomTooltip: React.FC<any> = ({ active, payload, darkMode = false }) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className={`p-3 rounded-lg border shadow-xl backdrop-blur-sm ${
-        darkMode
-          ? 'bg-gray-900/95 border-gray-700 text-white'
-          : 'bg-white/95 border-gray-300 text-gray-900'
-      }`}>
-        <p className={`font-semibold mb-2 text-sm ${
-          darkMode ? 'text-white' : 'text-gray-900'
-        }`}>
-          {data.date}
-        </p>
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center justify-between gap-3 mb-1 last:mb-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className={`text-xs font-medium truncate ${
-                darkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                {entry.name}
-              </span>
-            </div>
-            <span className={`text-xs font-bold ml-auto flex-shrink-0 ${
-              darkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              {entry.value.toFixed(2)}%
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return null;
+// Simple annotations for zero line only
+const generateSimpleAnnotations = (darkMode: boolean = false) => {
+  return {
+    position: 'back',
+    yaxis: [
+      {
+        y: 0,
+        strokeDashArray: 5,
+        borderColor: darkMode ? '#4b5563' : '#9ca3af',
+        opacity: 0.5,
+        width: 1,
+      }
+    ]
+  };
 };
 
 const PerformanceChart: React.FC<PerformanceChartProps> = ({
@@ -175,9 +143,109 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
     lq45: darkMode ? '#f59e0b' : '#d97706'    // amber-500/amber-600
   };
 
-  const gridColors = {
-    stroke: darkMode ? '#374151' : '#e5e7eb',  // gray-600/gray-200
-    textFill: darkMode ? '#9ca3af' : '#6b7280'  // gray-400/gray-500
+  // Chart configuration using the simpler style from page.tsx
+  const chartOptions = {
+    chart: {
+      height: 350,
+      type: 'line' as const,
+      zoom: {
+        enabled: false
+      },
+      background: 'transparent',
+      toolbar: {
+        show: true,
+        tools: {
+          download: true,
+          zoom: true,
+          zoomin: true,
+          zoomout: true,
+          pan: true,
+          reset: true
+        }
+      },
+      animations: {
+        enabled: true,
+        easing: 'easeinout' as const,
+        speed: 800
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      curve: 'straight' as const,
+      width: 2
+    },
+    title: {
+      text: 'Portfolio Performance vs Market Indices',
+      align: 'left' as const,
+      style: {
+        color: darkMode ? '#ffffff' : '#000000',
+        fontSize: '16px',
+        fontWeight: 'bold'
+      }
+    },
+    grid: {
+      row: {
+        colors: darkMode ? ['#374151', 'transparent'] : ['#f3f3f3', 'transparent'],
+        opacity: 0.5
+      },
+      borderColor: darkMode ? '#374151' : '#e5e7eb',
+      strokeDashArray: 3,
+      opacity: 0.3
+    },
+    xaxis: {
+      categories: chartData.map(item => item.date),
+      labels: {
+        style: {
+          colors: darkMode ? '#9ca3af' : '#6b7280',
+          fontSize: '12px'
+        }
+      }
+    },
+    yaxis: {
+      labels: {
+        formatter: (value: number) => `${value.toFixed(1)}%`,
+        style: {
+          colors: darkMode ? '#9ca3af' : '#6b7280'
+        }
+      },
+      title: {
+        text: 'Performance (%)',
+        style: {
+          color: darkMode ? '#9ca3af' : '#6b7280'
+        }
+      }
+    },
+    legend: {
+      show: true,
+      position: 'top' as const,
+      labels: {
+        colors: darkMode ? '#9ca3af' : '#6b7280'
+      }
+    },
+    tooltip: {
+      theme: darkMode ? 'dark' : 'light',
+      y: {
+        formatter: (value: number) => `${value.toFixed(2)}%`
+      }
+    },
+    series: [
+      {
+        name: 'My Portfolio',
+        data: chartData.map(item => item.portfolio)
+      },
+      {
+        name: 'JKSE (IHSG)',
+        data: chartData.map(item => item.jkse)
+      },
+      {
+        name: 'LQ45',
+        data: chartData.map(item => item.lq45)
+      }
+    ],
+    colors: [chartColors.portfolio, chartColors.jkse, chartColors.lq45],
+    annotations: generateSimpleAnnotations(darkMode)
   };
 
   if (isLoading) {
@@ -241,124 +309,23 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
     } p-6`}>
-      <div className="mb-6">
-        <h3 className={`text-xl font-bold ${
-          darkMode ? 'text-white' : 'text-gray-900'
-        }`}>
-          Portfolio Performance vs Market Indices
-        </h3>
-        <p className={`text-sm mt-1 ${
+      <div className="mb-4">
+        <p className={`text-sm ${
           darkMode ? 'text-gray-400' : 'text-gray-600'
         }`}>
           Performance comparison normalized from each stock's call date (0% = call date)
         </p>
       </div>
 
-      <div className="w-full h-[300px] sm:h-[400px] md:h-[450px] lg:h-[500px]">
-        <ResponsiveContainer width="100%" height="100%" debounce={1}>
-          <LineChart
-            data={chartData}
-            margin={{
-              top: 10,
-              right: 20,
-              left: 40,
-              bottom: 40,
-            }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={gridColors.stroke}
-              opacity={0.3}
-            />
-            <XAxis
-              dataKey="date"
-              tick={{
-                fill: gridColors.textFill,
-                fontSize: 10,
-                textAnchor: 'end',
-              }}
-              tickLine={{
-                stroke: gridColors.stroke,
-              }}
-              tickMargin={10}
-              interval="preserveStartEnd"
-              minTickGap={20}
-              angle={-45}
-              height={50}
-            />
-            <YAxis
-              tick={{
-                fill: gridColors.textFill,
-                fontSize: 10,
-              }}
-              tickLine={{
-                stroke: gridColors.stroke,
-              }}
-              tickMargin={10}
-              label={{
-                value: 'Performance Since Call Date (%)',
-                angle: -90,
-                position: 'insideLeft',
-                fill: gridColors.textFill,
-                fontSize: 11,
-                style: { textAnchor: 'middle' },
-                offset: -40,
-              }}
-            />
-            <Tooltip content={<CustomTooltip darkMode={darkMode} />} />
-            <Legend
-              wrapperStyle={{
-                paddingTop: '20px',
-              }}
-              iconType="line"
-            />
-
-            <Line
-              type="monotone"
-              dataKey="portfolio"
-              stroke={chartColors.portfolio}
-              strokeWidth={3}
-              dot={false}
-              activeDot={{
-                r: 6,
-                stroke: chartColors.portfolio,
-                strokeWidth: 2,
-                fill: darkMode ? '#1f2937' : '#ffffff',
-              }}
-              name="My Portfolio"
-            />
-
-            <Line
-              type="monotone"
-              dataKey="jkse"
-              stroke={chartColors.jkse}
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{
-                r: 5,
-                stroke: chartColors.jkse,
-                strokeWidth: 2,
-                fill: darkMode ? '#1f2937' : '#ffffff',
-              }}
-              name="JKSE (IHSG)"
-            />
-
-            <Line
-              type="monotone"
-              dataKey="lq45"
-              stroke={chartColors.lq45}
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{
-                r: 5,
-                stroke: chartColors.lq45,
-                strokeWidth: 2,
-                fill: darkMode ? '#1f2937' : '#ffffff',
-              }}
-              name="LQ45"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="w-full">
+        {typeof window !== 'undefined' && chartData.length > 0 && (
+          <ReactApexChart
+            options={chartOptions}
+            series={chartOptions.series}
+            type="line"
+            height={350}
+          />
+        )}
       </div>
 
       {/* Performance Summary */}

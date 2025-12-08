@@ -18,7 +18,7 @@ function mapHistoricalData(result: any[]): MarketDataPoint[] {
 export class MarketDataService {
   async fetchHistoricalData(ticker: string, period: { start: Date; end: Date }): Promise<MarketDataPoint[]> {
     try {
-      const queryOptions = { period1: period.start, period2: period.end, interval: '1d' as const }
+      const queryOptions = { period1: period.start, period2: period.end, interval: '1mo' as const }
       const result = await yfChart(ticker, queryOptions as any)
       return mapHistoricalData(result.quotes || result)
     } catch (error) {
@@ -44,7 +44,7 @@ export class MarketDataService {
               break
             }
           }
-        } catch {}
+        } catch { }
       }
 
       return {
@@ -56,16 +56,23 @@ export class MarketDataService {
     }
   }
 
-  async fetchStocksWithMarketData(stockCalls: StockCall[] = dummyStockCalls, lookbackDays: number = 365): Promise<{ stocks: StockWithMarketData[]; marketIndices: MarketIndices }> {
+  async fetchStocksWithMarketData(stockCalls: StockCall[] = dummyStockCalls): Promise<{ stocks: StockWithMarketData[]; marketIndices: MarketIndices }> {
     try {
       const endDate = new Date()
-      const startDate = new Date(endDate.getTime() - lookbackDays * 24 * 60 * 60 * 1000)
 
-      const marketIndices = await this.fetchMarketIndices({ start: startDate, end: endDate })
+      // Find the earliest call date among all stocks to determine the start date for market indices
+      const earliestCallDate = stockCalls.reduce((earliest, stock) => {
+        const callDate = new Date(stock.callDate)
+        return callDate < earliest ? callDate : earliest
+      }, new Date())
+
+      const marketIndices = await this.fetchMarketIndices({ start: earliestCallDate, end: endDate })
 
       const stocksWithData = await Promise.all(
         stockCalls.map(async (stock) => {
-          const historicalData = await this.fetchHistoricalData(stock.ticker, { start: startDate, end: endDate })
+          // Fetch historical data starting from each stock's call date
+          const stockStartDate = new Date(stock.callDate)
+          const historicalData = await this.fetchHistoricalData(stock.ticker, { start: stockStartDate, end: endDate })
 
           let currentPrice = stock.currentPrice
           try {

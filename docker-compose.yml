@@ -1,5 +1,6 @@
 services:
   web:
+    image: market-web
     build:
       context: .
       args:
@@ -7,9 +8,10 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      - market
+      - market-api
     restart: unless-stopped
-  market:
+  market-api:
+    image: market-api
     build:
       context: ./services/market-data-service
       args:

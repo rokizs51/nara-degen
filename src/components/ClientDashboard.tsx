@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { StockTable, StatsMatrix, PerformanceChart, PortfolioSimulation } from '@/components';
+import { StockTable, StatsMatrix, PerformanceSimulation } from '@/components';
 import { StockWithMarketData, MarketIndices } from '@/data/stock-calls';
 
 interface ClientDashboardProps {
@@ -19,6 +19,35 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   const [marketIndices, setMarketIndices] = useState<MarketIndices | undefined>(initialMarketIndices);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  // Dark mode detection for mobile compatibility
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Check for system dark mode preference and device capabilities
+  useEffect(() => {
+    const checkDarkMode = () => {
+      // Check if device supports prefers-color-scheme
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return true;
+      }
+
+      // Check if body has dark class (fallback)
+      return document.body.classList.contains('dark');
+    };
+
+    setDarkMode(checkDarkMode());
+
+    // Listen for system dark mode changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setDarkMode(e.matches);
+    };
+
+    if (mediaQuery) {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, []);
 
   // Fetch real data on mount
   useEffect(() => {
@@ -44,7 +73,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   const refreshData = async () => {
     setIsLoading(true);
     try {
-      const endpoint = process.env.NEXT_PUBLIC_MARKET_API_URL;
+      const endpoint = "http://localhost:4001";
       const response = await fetch(endpoint + '/market-data');
       if (!response.ok) throw new Error('Failed to fetch');
 
@@ -82,7 +111,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
                 Nara Degen
               </h1>
               <p className="text-gray-500 dark:text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
-                Jakarta market performance tracking
+                Market Performance Tracking
               </p>
             </div>
             <div className="text-left sm:text-right">
@@ -102,7 +131,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
         {/* Key Metrics Row */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8 mb-8">
           <div className="xl:col-span-2">
-            <PerformanceChart stocks={stocks} marketIndices={marketIndices} isLoading={isLoading} />
+            <PerformanceSimulation stocks={stocks} marketIndices={marketIndices} isLoading={isLoading} darkMode={darkMode} />
           </div>
           <div className="space-y-4 lg:space-y-6">
             <div>
@@ -186,10 +215,6 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
           <StatsMatrix stocks={stocks} isLoading={isLoading} />
         </div>
 
-        {/* Portfolio Simulation */}
-        <div className="mb-12">
-          <PortfolioSimulation stocks={stocks} marketIndices={marketIndices} isLoading={isLoading} />
-        </div>
 
         {/* Stock Table */}
         <div>
@@ -202,7 +227,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
             </p>
           </div>
           <div>
-            <StockTable stocks={stocks} isLoading={isLoading} />
+            <StockTable stocks={stocks} isLoading={isLoading} darkMode={darkMode} />
           </div>
         </div>
 
